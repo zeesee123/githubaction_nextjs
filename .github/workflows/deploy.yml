@@ -48,4 +48,4 @@ jobs:
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
           script: "/var/www/dummyproject/deploy.sh"
-#hehefjfjlalalfjfjfjf
+#hehefjfjlalalfjfjfjframram
