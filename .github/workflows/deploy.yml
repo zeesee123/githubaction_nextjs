@@ -1,36 +1,51 @@
-- name: Build Next.js
-  run: |
-    npm ci
-    npm run build
-    tar -czf app.tar.gz .next public package.json package-lock.json
+name: Deploy Dummy Next.js
 
-- name: Deploy & restart PM2
-  uses: appleboy/ssh-action@v0.1.7
-  with:
-    host: ${{ secrets.HOST }}
-    username: ubuntu
-    key: ${{ secrets.SSH_KEY }}
-    script: |
-      cd /home/ubuntu/dummyproject
-      rm -rf .next public package.json package-lock.json
-      tar -xzf app.tar.gz
-      export PORT=45000
-      pm2 restart dummy-next || pm2 start "npx next start -p 45000" --name dummy-next
-- name: Build Next.js
-  run: |
-    npm ci
-    npm run build
-    tar -czf app.tar.gz .next public package.json package-lock.json
+on:
+  push:
+    branches: [ "master" ]  # runs whenever you push to main
 
-- name: Deploy & restart PM2
-  uses: appleboy/ssh-action@v0.1.7
-  with:
-    host: ${{ secrets.HOST }}
-    username: ubuntu
-    key: ${{ secrets.SSH_KEY }}
-    script: |
-      cd /home/ubuntu/dummyproject
-      rm -rf .next public package.json package-lock.json
-      tar -xzf app.tar.gz
-      export PORT=45000
-      pm2 restart dummy-next || pm2 start "npx next start -p 45000" --name dummy-next
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout code
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      # 2️⃣ Set Node 18.19
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.19'
+
+      # 3️⃣ Install deps and build
+      - name: Build Next.js
+        run: |
+          npm ci
+          npm run build
+
+      # 4️⃣ Package build artefacts
+      - name: Package build
+        run: |
+          tar -czf app.tar.gz .next public package.json package-lock.json
+
+      # 5️⃣ Copy artefacts to Lightsail
+      - name: Copy to server
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "app.tar.gz"
+          target: "/var/www/dummyproject/"
+
+      # 6️⃣ Run deploy script on server
+      - name: Run deploy script
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: "/var/www/dummyproject/deploy.sh"
+#hehefjfj
