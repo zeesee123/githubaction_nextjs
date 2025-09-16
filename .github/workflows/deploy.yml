@@ -47,4 +47,4 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
-          script: "/var/www/dummyproject/deploy.sh"
+          script: "sudo /var/www/dummyproject/deploy.sh"
