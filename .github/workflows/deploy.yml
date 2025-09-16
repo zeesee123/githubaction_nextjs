@@ -1,49 +1,18 @@
-name: Deploy Dummy Next.js
+- name: Build Next.js
+  run: |
+    npm ci
+    npm run build
+    tar -czf app.tar.gz .next public package.json package-lock.json
 
-on:
-  push:
-    branches: [ "master" ]
-
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      # 1️⃣ Checkout repo
-      - uses: actions/checkout@v3
-
-      # 2️⃣ Node 18.19 locally to build
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '18.19'
-
-      # 3️⃣ Build standalone Next.js server
-      - name: Build Next.js (standalone)
-        run: |
-          npm ci
-          npm run build
-          tar -czf app.tar.gz .next/standalone .next/static public package.json
-
-      # 4️⃣ Copy built artefact to Lightsail ubuntu’s dummyproject folder
-      - name: Copy to server
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: ${{ secrets.HOST }}
-          username: ubuntu
-          key: ${{ secrets.SSH_KEY }}
-          source: "app.tar.gz"
-          target: "/home/ubuntu/dummyproject"
-
-      # 5️⃣ Unpack and restart pm2 using existing Node on VPS
-      - name: Deploy & restart PM2
-        uses: appleboy/ssh-action@v0.1.7
-        with:
-          host: ${{ secrets.HOST }}
-          username: ubuntu
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            cd /home/ubuntu/dummyproject
-            rm -rf .next public package.json
-            tar -xzf app.tar.gz
-            export PORT=45000
-            pm2 restart dummy-next || pm2 start .next/standalone/server.js --name dummy-next
+- name: Deploy & restart PM2
+  uses: appleboy/ssh-action@v0.1.7
+  with:
+    host: ${{ secrets.HOST }}
+    username: ${{ secrets.USER }}
+    key: ${{ secrets.SSH_KEY }}
+    script: |
+      cd /home/ubuntu/dummyproject
+      rm -rf .next public package.json package-lock.json
+      tar -xzf app.tar.gz
+      export PORT=45000
+      pm2 restart dummy-next || pm2 start "npx next start -p 45000" --name dummy-next
