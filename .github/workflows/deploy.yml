@@ -38,7 +38,7 @@ jobs:
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
           source: "app.tar.gz"
-          target: "/var/www/dummyproject/app.tar.gz"
+          target: "/var/www/dummyproject/"
 
       # 6️⃣ Run deploy script on server
       - name: Run deploy script
