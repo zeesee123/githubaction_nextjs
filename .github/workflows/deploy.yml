@@ -3,12 +3,30 @@
     npm ci
     npm run build
     tar -czf app.tar.gz .next public package.json package-lock.json
-#dick
+
 - name: Deploy & restart PM2
   uses: appleboy/ssh-action@v0.1.7
   with:
     host: ${{ secrets.HOST }}
-    username: ${{ secrets.USER }}
+    username: ubuntu
+    key: ${{ secrets.SSH_KEY }}
+    script: |
+      cd /home/ubuntu/dummyproject
+      rm -rf .next public package.json package-lock.json
+      tar -xzf app.tar.gz
+      export PORT=45000
+      pm2 restart dummy-next || pm2 start "npx next start -p 45000" --name dummy-next
+- name: Build Next.js
+  run: |
+    npm ci
+    npm run build
+    tar -czf app.tar.gz .next public package.json package-lock.json
+
+- name: Deploy & restart PM2
+  uses: appleboy/ssh-action@v0.1.7
+  with:
+    host: ${{ secrets.HOST }}
+    username: ubuntu
     key: ${{ secrets.SSH_KEY }}
     script: |
       cd /home/ubuntu/dummyproject
